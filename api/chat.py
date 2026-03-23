@@ -22,7 +22,7 @@ class handler(BaseHTTPRequestHandler):
       genai.configure(api_key=os.environ.get('GEMINI_API_KEY'))
 
       model = genai.GenerativeModel(
-        model_name='gemini-2.5-flash',
+        model_name='gemini-3.1-flash-lite',
         system_instruction=system_prompt
       )
 

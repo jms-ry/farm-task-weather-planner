@@ -6,7 +6,7 @@ export async function sendMessage(systemPrompt, messages) {
   })
 
   const text = await response.text()
-  console.log('API raw response:', text)
+  // console.log('API raw response:', text)
 
   // try parsing the whole text first
   let data

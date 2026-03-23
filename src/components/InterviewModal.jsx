@@ -56,7 +56,7 @@ export default function InterviewModal({ config, onClose }) {
     const userMessage = { role: 'user', content: text }
     const updatedMessages = [...messages, userMessage]
     
-    console.log('1. sending messages:', updatedMessages)
+    // console.log('1. sending messages:', updatedMessages)
     
     setMessages(updatedMessages)
     setInput('')
@@ -64,7 +64,7 @@ export default function InterviewModal({ config, onClose }) {
     setError(null)
 
     try {
-      console.log('2. current phase:', phase)
+      // console.log('2. current phase:', phase)
 
       if (phase === PHASE.AWAITING_SCORE_REQUEST) {
         const lower = text.toLowerCase()
@@ -77,9 +77,9 @@ export default function InterviewModal({ config, onClose }) {
         }
       }
 
-      console.log('3. calling sendMessage...')
+     // console.log('3. calling sendMessage...')
       const reply = await sendMessage(systemPrompt, updatedMessages)
-      console.log('4. got reply:', reply)
+     // console.log('4. got reply:', reply)
 
       const assistantMessage = { role: 'assistant', content: reply }
       setMessages([...updatedMessages, assistantMessage])
@@ -99,7 +99,7 @@ export default function InterviewModal({ config, onClose }) {
       }
 
     } catch (e) {
-      console.log('CAUGHT ERROR:', e.message, e)
+     // console.log('CAUGHT ERROR:', e.message, e)
       setError('Something went wrong. Please try again.')
     } finally {
       setIsTyping(false)

@@ -8,22 +8,25 @@ export async function sendMessage(systemPrompt, messages) {
   const text = await response.text()
   console.log('API raw response:', text)
 
-  // extract the last valid JSON object from the response
-  // this handles cases where the response contains multiple JSON objects
-  const jsonMatches = text.match(/\{.*?\}/gs)
-  if (!jsonMatches || jsonMatches.length === 0) {
-    throw new Error('No valid JSON in response: ' + text)
+  // find the last { ... } block in the response
+  const lastBrace = text.lastIndexOf('}')
+  const firstBrace = text.lastIndexOf('{', lastBrace)
+
+  if (firstBrace === -1 || lastBrace === -1) {
+    throw new Error('No valid JSON found in response')
   }
+
+  const jsonStr = text.substring(firstBrace, lastBrace + 1)
 
   let data
   try {
-    data = JSON.parse(jsonMatches[jsonMatches.length - 1])
+    data = JSON.parse(jsonStr)
   } catch (e) {
-    throw new Error('Failed to parse JSON: ' + text)
+    throw new Error('Failed to parse JSON: ' + jsonStr)
   }
 
-  if (!response.ok || data.error) {
-    throw new Error(data.error || 'Something went wrong')
+  if (data.error) {
+    throw new Error(data.error)
   }
 
   return data.reply

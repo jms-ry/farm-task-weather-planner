@@ -43,9 +43,12 @@ export default function InterviewModal({ config, onClose }) {
   const startIntro = async () => {
     setIsTyping(true)
     try {
-      const introMessages = [{ role: 'user', content: 'Start the interview introduction.' }]
+      const introMessages = [{ role: 'user', content: 'Start the interview introduction.', hidden: true }]
       const reply = await sendMessage(systemPrompt, introMessages)
-      setMessages([{ role: 'assistant', content: reply }])
+      setMessages([
+        { role: 'user', content: 'Start the interview introduction.', hidden: true },
+        { role: 'assistant', content: reply }
+      ])
     } catch (e) {
       setError('Failed to connect. Please try again.')
     } finally {
@@ -174,7 +177,7 @@ export default function InterviewModal({ config, onClose }) {
         </div>
 
         <div className="modal__messages">
-          {messages.map((msg, i) => (
+          {messages.filter(m => !m.hidden).map((msg, i) => (
             <div key={i} className={`modal__message modal__message--${msg.role}`}>
               {msg.role === 'assistant' && <div className="modal__msg-avatar">A</div>}
               <div className="modal__bubble">

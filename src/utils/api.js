@@ -9,6 +9,7 @@ export async function sendMessage(systemPrompt, messages) {
   console.log('API response:', data)
 
   if (!response.ok) {
+    console.log(data.error)
     throw new Error(data.error || 'Something went wrong')
   }
 

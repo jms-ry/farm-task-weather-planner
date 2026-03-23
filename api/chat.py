@@ -34,7 +34,7 @@ def handler(request):
             'contents': gemini_messages
         }
 
-        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-pro-04-17:generateContent?key={api_key}'
+        url = f'https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key={api_key}'
 
         req = urllib.request.Request(
             url,

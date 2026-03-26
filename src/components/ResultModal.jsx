@@ -8,11 +8,11 @@ const LOADING_STEPS = [
   { icon: '💨', text: 'Checking wind conditions...'       },
   { icon: '🌧', text: 'Analyzing rain probability...'     },
   { icon: '🌾', text: 'Evaluating task feasibility...'    },
-  { icon: '✅', text: 'Preparing your recommendation...'  },
+  { icon: '✔️', text: 'Preparing your recommendation...'  },
 ]
 
 const VERDICT_CONFIG = {
-  good:  { emoji: '✅', className: 'good'  },
+  good:  { emoji: '✔️', className: 'good'  },
   risky: { emoji: '⚠️', className: 'risky' },
   bad:   { emoji: '❌', className: 'bad'   },
 }

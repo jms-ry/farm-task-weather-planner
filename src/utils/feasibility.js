@@ -370,13 +370,22 @@ function findBestWindow(hourlyData, durationValue, profile, startTime, startMode
   const duration = parseDurationMax(durationValue)
   const now = getStartDate(startTime, startMode)
 
-  const futureHours = hourlyData.filter(h => new Date(h.time + ':00+08:00') >= now)
+  const futureHours = hourlyData.filter(h => {
+    const hTime = new Date(h.time + ':00+08:00')
+    const hour = hTime.getHours()
+    return hTime >= now && hour >= 6 && hour < 18
+  })
 
   let bestStart = null
   let bestScore = Infinity
 
   for (let i = 0; i <= futureHours.length - duration; i++) {
     const window = futureHours.slice(i, i + duration)
+
+    // skip windows that bleed into nighttime
+    const windowEnd = new Date(new Date(window[0].time + ':00+08:00').getTime() + duration * 60 * 60 * 1000)
+    if (windowEnd.getHours() > 18) continue
+
     const score = window.reduce((sum, h) => (
       sum +
       (h.rain / profile.rain.bad) +

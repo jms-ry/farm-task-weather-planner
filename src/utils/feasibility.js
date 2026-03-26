@@ -293,7 +293,8 @@ export function analyzeFeasibility(taskName, startTime, startMode, durationValue
   }
 
   const verdict = determineVerdict(window, profile)
-  const bestWindow = findBestWindow(hourlyData, durationValue, profile)
+  const bestWindow = findBestWindow(hourlyData, durationValue, profile, startTime, startMode)
+  const showBestWindow = verdict !== 'good' ? bestWindow : null
   const tips = buildTips(profile, window)
 
   return {
@@ -302,7 +303,7 @@ export function analyzeFeasibility(taskName, startTime, startMode, durationValue
     verdictSub: getVerdictSub(verdict, profile, window),
     hourly: window,
     factors: buildFactors(window),
-    bestTime: bestWindow,
+    bestTime: showBestWindow,
     tips,
     profile,
   }
@@ -313,9 +314,9 @@ function getWeatherWindow(startTime, durationValue, hourlyData, startMode) {
   const startDate = getStartDate(startTime, startMode)
   const endDate = new Date(startDate.getTime() + durationHours * 60 * 60 * 1000)
 
-  console.log('startDate:', startDate)
-  console.log('endDate:', endDate)
-  console.log('first hourly time:', hourlyData[0]?.time)
+  // console.log('startDate:', startDate)
+  // console.log('endDate:', endDate)
+  // console.log('first hourly time:', hourlyData[0]?.time)
 
   return hourlyData
     .filter(h => {
@@ -365,13 +366,17 @@ function determineVerdict(window, profile) {
   return 'good'
 }
 
-function findBestWindow(hourlyData, durationValue, profile) {
+function findBestWindow(hourlyData, durationValue, profile, startTime, startMode) {
   const duration = parseDurationMax(durationValue)
+  const now = getStartDate(startTime, startMode)
+
+  const futureHours = hourlyData.filter(h => new Date(h.time + ':00+08:00') >= now)
+
   let bestStart = null
   let bestScore = Infinity
 
-  for (let i = 0; i <= hourlyData.length - duration; i++) {
-    const window = hourlyData.slice(i, i + duration)
+  for (let i = 0; i <= futureHours.length - duration; i++) {
+    const window = futureHours.slice(i, i + duration)
     const score = window.reduce((sum, h) => (
       sum +
       (h.rain / profile.rain.bad) +
@@ -387,7 +392,7 @@ function findBestWindow(hourlyData, durationValue, profile) {
 
   if (!bestStart) return null
 
-  const startDate = new Date(bestStart.time)
+  const startDate = new Date(bestStart.time + ':00+08:00')
   const endDate = new Date(startDate.getTime() + duration * 60 * 60 * 1000)
 
   return {

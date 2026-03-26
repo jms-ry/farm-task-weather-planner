@@ -33,6 +33,7 @@ export async function fetchWeather(lat, lon) {
 function mapWeatherData(data) {
   const c = data.current
   const code = c.weather_code
+  const hour = new Date().getHours()
 
   return {
     current: {
@@ -42,7 +43,7 @@ function mapWeatherData(data) {
       wind: Math.round(c.wind_speed_10m),
       rain: c.precipitation_probability,
       description: getDescription(code),
-      icon: getIcon(code),
+      icon: getIconForTime(code, hour),
     },
     hourly: mapHourly(data.hourly),
   }
@@ -53,9 +54,11 @@ function mapHourly(hourly) {
   const results = []
 
   for (let i = 0; i < hourly.time.length; i++) {
-    const time = new Date(hourly.time[i])
+    const time = new Date(hourly.time[i] + ':00+08:00')
     if (time < now) continue
     if (results.length >= 24) break
+
+    const hour = time.getHours()
 
     results.push({
       time: hourly.time[i],
@@ -65,7 +68,7 @@ function mapHourly(hourly) {
       wind: Math.round(hourly.wind_speed_10m[i]),
       humidity: hourly.relative_humidity_2m[i],
       code: hourly.weather_code[i],
-      icon: getIcon(hourly.weather_code[i]),
+      icon: getIconForTime(hourly.weather_code[i], hour),
       level: getRainLevel(hourly.precipitation_probability[i]),
     })
   }
@@ -99,15 +102,17 @@ function getDescription(code) {
   return 'Stormy'
 }
 
-function getIcon(code) {
-  if (code === 0)              return '☀️'
-  if (code <= 2)               return '⛅'
-  if (code === 3)              return '☁️'
-  if (code <= 49)              return '🌫'
-  if (code <= 59)              return '🌦'
-  if (code <= 69)              return '🌧'
-  if (code <= 79)              return '❄️'
-  if (code <= 84)              return '🌦'
-  if (code <= 94)              return '⛈'
+export function getIconForTime(code, hour) {
+  const isNight = hour !== undefined && (hour >= 18 || hour < 6)
+
+  if (code === 0)  return isNight ? '🌙' : '☀️'
+  if (code <= 2)   return isNight ? '🌙' : '⛅'
+  if (code === 3)  return '☁️'
+  if (code <= 49)  return '🌫'
+  if (code <= 59)  return '🌦'
+  if (code <= 69)  return '🌧'
+  if (code <= 79)  return '❄️'
+  if (code <= 84)  return '🌦'
+  if (code <= 94)  return '⛈'
   return '🌩'
 }

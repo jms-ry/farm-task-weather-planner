@@ -9,6 +9,7 @@ export default function Header({ onLocationSelect, locationLabel }) {
   const [open, setOpen] = useState(false)
   const debounceRef = useRef(null)
   const wrapRef = useRef(null)
+  const [searchError, setSearchError] = useState(false)
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -33,11 +34,14 @@ export default function Header({ onLocationSelect, locationLabel }) {
 
     debounceRef.current = setTimeout(async () => {
       setLoading(true)
+      setSearchError(false)
       try {
         const results = await searchLocation(val)
         setSuggestions(results)
+        if (results.length === 0) setSearchError(true)
       } catch {
         setSuggestions([])
+        setSearchError(true)
       } finally {
         setLoading(false)
       }
@@ -90,6 +94,11 @@ export default function Header({ onLocationSelect, locationLabel }) {
                 </div>
               </button>
             ))}
+          </div>
+        )}
+        {searchError && !loading && query.trim().length >= 3 && (
+          <div className="header__search-error">
+            No locations found. Try a different search.
           </div>
         )}
       </div>

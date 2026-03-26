@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { analyzeFeasibility } from '../utils/feasibility'
+import { analyzeFeasibility, buildFactors } from '../utils/feasibility'
 import './ResultModal.css'
 
 const LOADING_STEPS = [
@@ -46,15 +46,29 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
     }, 50)
 
     const doneTimer = setTimeout(() => {
-      const analysis = analyzeFeasibility(
-        task,
-        resolvedStartTime,
-        startMode,
-        duration,
-        weather.hourly
-      )
-      setResult(analysis)
-      setLoading(false)
+      try {
+        const analysis = analyzeFeasibility(
+          task,
+          resolvedStartTime,
+          startMode,
+          duration,
+          weather.hourly
+        )
+        setResult(analysis)
+      } catch (e) {
+        setResult({
+          verdict: 'good',
+          verdictLabel: 'Unable to analyze',
+          verdictSub: 'Something went wrong while analyzing the weather data. Please try again.',
+          hourly: [],
+          factors: buildFactors([]),
+          bestTime: null,
+          tips: [{ icon: '🌾', text: 'Please close this and try again with a different task or location.' }],
+          profile: null,
+        })
+      } finally {
+        setLoading(false)
+      }
     }, 5200)
 
     return () => {

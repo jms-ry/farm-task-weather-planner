@@ -437,7 +437,7 @@ function formatTime(date) {
   })
 }
 
-function buildFactors(window) {
+export function buildFactors(window) {
 
   if (window.length === 0) return [
     { icon: '🌧', label: 'Rain',     value: 'N/A', level: 'ok' },

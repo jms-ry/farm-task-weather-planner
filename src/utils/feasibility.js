@@ -17,7 +17,6 @@ function calculateHeatIndex(tempC, humidity) {
 }
 
 function getHIVerdict(hi) {
-  if (hi > 51) return 'bad'
   if (hi > 41) return 'bad'
   if (hi > 32) return 'caution'
   return 'good'
@@ -448,13 +447,6 @@ function determineSunVerdict(window) {
   for (const hour of window) {
     if (hour.weatherCode === 2) return 'risky'
   }
-  return 'good'
-}
-
-// ─── HEAT INDEX HELPERS ───────────────────────────────────────────────────────
-function getHIVerdict(hi) {
-  if (hi > 41) return 'bad'
-  if (hi > 32) return 'caution'
   return 'good'
 }
 

@@ -1,9 +1,11 @@
 // ─── HEAT INDEX ───────────────────────────────────────────────────────────────
 function calculateHeatIndex(tempC, humidity) {
-  const T = tempC
+  const T = tempC * 9/5 + 32
   const RH = humidity
-  if (T < 27) return T
-  return Math.round(
+
+  if (T < 80) return tempC
+  
+  const HI =
     -42.379 +
     2.04901523 * T +
     10.14333127 * RH -
@@ -12,8 +14,9 @@ function calculateHeatIndex(tempC, humidity) {
     0.05481717 * RH * RH +
     0.00122874 * T * T * RH +
     0.00085282 * T * RH * RH -
-    0.00000199 * T * T * RH * RH
-  )
+  0.00000199 * T * T * RH * RH
+
+  return Math.round((HI - 32) * 5/9)
 }
 
 function getHIVerdict(hi) {
@@ -497,17 +500,20 @@ export function buildFactors(window, profile) {
   const maxHumidity = Math.max(...window.map(h => h.humidity))
   const maxHI       = Math.max(...window.map(h => h.heatIndex ?? calculateHeatIndex(h.temp, h.humidity)))
 
+  const rainLevel = maxRain >= (profile?.rain?.bad ?? 60)   ? 'bad': maxRain >= (profile?.rain?.risky ?? 35)  ? 'warn' : 'ok'
+
+  const windLevel = maxWind >= (profile?.wind?.bad ?? 40)   ? 'bad': maxWind >= (profile?.wind?.risky ?? 25)  ? 'warn' : 'ok'
+
+  const humidityLevel = maxHumidity >= (profile?.humidity?.bad ?? 90)   ? 'bad': maxHumidity >= (profile?.humidity?.risky ?? 80)  ? 'warn' : 'ok'
+
   return [
-    { icon: '🌧', label: 'Rain',       value: `${maxRain}%`,    level: getRainLevel(maxRain)         },
-    { icon: '💨', label: 'Wind',       value: `${maxWind}km/h`, level: getWindLevel(maxWind)         },
-    { icon: '💧', label: 'Humidity',   value: `${maxHumidity}%`,level: getHumidityLevel(maxHumidity) },
-    { icon: '🌡', label: 'Heat Index', value: `${maxHI}°C`,     level: getHILevel(maxHI)             },
+    { icon: '🌧', label: 'Rain',       value: `${maxRain}%`,    level: rainLevel     },
+    { icon: '💨', label: 'Wind',       value: `${maxWind}km/h`, level: windLevel     },
+    { icon: '💧', label: 'Humidity',   value: `${maxHumidity}%`,level: humidityLevel },
+    { icon: '🌡', label: 'Heat Index', value: `${maxHI}°C`,     level: getHILevel(maxHI) },
   ]
 }
 
-function getRainLevel(v)     { return v >= 60 ? 'bad' : v >= 35 ? 'warn' : 'ok' }
-function getWindLevel(v)     { return v >= 40 ? 'bad' : v >= 25 ? 'warn' : 'ok' }
-function getHumidityLevel(v) { return v >= 90 ? 'bad' : v >= 80 ? 'warn' : 'ok' }
 function getHILevel(v)       { return v > 41  ? 'bad' : v > 32  ? 'warn' : 'ok' }
 
 // ─── TIPS ─────────────────────────────────────────────────────────────────────

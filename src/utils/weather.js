@@ -18,6 +18,7 @@ export async function fetchWeather(lat, lon) {
       'weather_code',
       'wind_speed_10m',
       'relative_humidity_2m',
+      'sunshine_duration',
     ].join(','),
     timezone: 'Asia/Manila',
     forecast_days: 3,
@@ -70,6 +71,12 @@ function mapHourly(hourly) {
       code: hourly.weather_code[i],
       icon: getIconForTime(hourly.weather_code[i], hour),
       level: getRainLevel(hourly.precipitation_probability[i]),
+      heatIndex: calculateHeatIndex(
+        Math.round(hourly.temperature_2m[i]),
+        hourly.relative_humidity_2m[i]
+      ),
+      weatherCode: hourly.weather_code[i],
+      sunshineDuration: hourly.sunshine_duration?.[i] ?? 0,
     })
   }
 
@@ -115,4 +122,33 @@ export function getIconForTime(code, hour) {
   if (code <= 84)  return '🌦'
   if (code <= 94)  return '⛈'
   return '🌩'
+}
+
+function calculateHeatIndex(tempC, humidity) {
+  const T = tempC
+  const RH = humidity
+
+  // Only meaningful above 27°C
+  if (T < 27) return T
+
+  const HI =
+    -42.379 +
+    2.04901523 * T +
+    10.14333127 * RH -
+    0.22475541 * T * RH -
+    0.00683783 * T * T -
+    0.05481717 * RH * RH +
+    0.00122874 * T * T * RH +
+    0.00085282 * T * RH * RH -
+    0.00000199 * T * T * RH * RH
+
+  return Math.round(HI)
+}
+
+export function getHeatIndexLevel(hi) {
+  if (hi > 51) return { level: 'extreme-danger', label: 'Extreme Danger',  color: 'bad'     }
+  if (hi > 41) return { level: 'danger',         label: 'Danger',          color: 'bad'     }
+  if (hi > 32) return { level: 'extreme-caution',label: 'Extreme Caution', color: 'caution' }
+  if (hi > 27) return { level: 'caution',         label: 'Caution',         color: 'warn'    }
+  return              { level: 'normal',           label: 'Normal',          color: 'ok'      }
 }

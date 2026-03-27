@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { analyzeFeasibility, buildFactors } from '../utils/feasibility'
+import { analyzeFeasibility, buildFactors, isNightTime} from '../utils/feasibility'
 import './ResultModal.css'
 
 const LOADING_STEPS = [
@@ -12,9 +12,10 @@ const LOADING_STEPS = [
 ]
 
 const VERDICT_CONFIG = {
-  good:  { emoji: '✔️', className: 'good'  },
-  risky: { emoji: '⚠️', className: 'risky' },
-  bad:   { emoji: '❌', className: 'bad'   },
+  good:    { emoji: '✅', className: 'good'    },
+  caution: { emoji: '⚠️', className: 'caution' },
+  risky:   { emoji: '⚠️', className: 'risky'   },
+  bad:     { emoji: '❌', className: 'bad'      },
 }
 
 export default function ResultModal({ task, duration, startTime, startMode, weather, onClose }) {
@@ -46,6 +47,12 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
     }, 50)
 
     const doneTimer = setTimeout(() => {
+      if (isNightTime(startTime, startMode)) {
+        setResult({ nightMode: true })
+        setLoading(false)
+        return
+      }
+
       try {
         const analysis = analyzeFeasibility(
           task,
@@ -59,12 +66,13 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
         setResult({
           verdict: 'good',
           verdictLabel: 'Unable to analyze',
-          verdictSub: 'Something went wrong while analyzing the weather data. Please try again.',
+          verdictSub: 'Something went wrong. Please close and try again.',
           hourly: [],
-          factors: buildFactors([]),
+          factors: buildFactors([], {}),
           bestTime: null,
           tips: [{ icon: '🌾', text: 'Please close this and try again with a different task or location.' }],
           profile: null,
+          nightMode: false,
         })
       } finally {
         setLoading(false)
@@ -78,7 +86,7 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
     }
   }, [])
 
-  const config = result ? VERDICT_CONFIG[result.verdict] : null
+  const config = result && !result.nightMode ? VERDICT_CONFIG[result.verdict] : null
 
   return (
     <div className="modal-overlay" onClick={onClose}>
@@ -106,6 +114,25 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
             </div>
             <span className="modal__progress-label">{progress}%</span>
             <p className="modal__loading-sub">Analyzing weather for your farm task...</p>
+          </div>
+        ) : result && result.nightMode ? (
+          <div className="modal__night">
+            <div className="modal__night-icon">🌙</div>
+            <h3 className="modal__night-title">Rest well, Mahal na Magsasaka.</h3>
+            <p className="modal__night-message">
+              It's past 8 PM — time to put down your tools. Farmers like you are the
+              backbone of this country, and you deserve a well-earned rest tonight.
+            </p>
+            <p className="modal__night-family">
+              Spend some time with your family. The fields will still be there tomorrow. 🌾
+            </p>
+            <div className="modal__night-divider" />
+            <p className="modal__night-plan">
+              Come back tomorrow and we'll help you plan your day right — starting at the best time for <strong>{task}</strong>.
+            </p>
+            <button className="modal__night-close" onClick={onClose}>
+              Good night 🌙
+            </button>
           </div>
         ) : result && (
           <div className="modal__scroll">
@@ -159,7 +186,7 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
                     Better window: {result.bestTime.label}
                   </div>
                   <div className="modal__best-time-sub">
-                    Rain {result.bestTime.rain}% · Wind {result.bestTime.wind} km/h · Humidity {result.bestTime.humidity}% — consider rescheduling to this window for better results.
+                    Rain {result.bestTime.rain}% · Wind {result.bestTime.wind} km/h · Humidity {result.bestTime.humidity}% · Heat Index {result.bestTime.hi}°C — consider rescheduling to this window for better results.
                   </div>
                 </div>
               </div>

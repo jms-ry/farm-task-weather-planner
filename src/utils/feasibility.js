@@ -469,7 +469,7 @@ function getVerdictSub(verdict, profile, window, maxHI, timeIsOptimal, cloudVerd
   if (!timeIsOptimal && profile.tips.time) issues.push('non-optimal time of day')
   if (cloudVerdict !== 'good')             issues.push('insufficient sunlight for drying')
 
-  return issues.length > 0 ? `Due to ${issues.join(' and ')} in your window.` : `Conditions are borderline for ${profile.name}.`
+  return issues.length > 0 ? `Due to ${formatIssues(issues)} in your window.` : `Conditions are borderline for ${profile.name}.`
 }
 
 // ─── FACTORS ─────────────────────────────────────────────────────────────────
@@ -613,4 +613,13 @@ function findBestWindow(hourlyData, durationValue, profile, startTime, startMode
 
 function formatTime(date) {
   return date.toLocaleTimeString('en-PH', { hour: 'numeric', minute: '2-digit', hour12: true })
+}
+
+// Issues Helper
+
+function formatIssues(issues) {
+  if (issues.length === 1) return issues[0]
+  if (issues.length === 2) return issues.join(' and ')
+  
+  return `${issues.slice(0, -1).join(', ')}, and ${issues[issues.length - 1]}`
 }

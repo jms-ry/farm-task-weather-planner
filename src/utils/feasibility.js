@@ -353,6 +353,19 @@ export function getNextOptimalTime(taskId) {
   return `${earliest}:00 AM`
 }
 
+function hasConsecutiveDryHours(window, threshold, required) {
+  let streak = 0
+  for (const hour of window) {
+    if (hour.rain < threshold) {
+      streak++
+      if (streak >= required) return true
+    } else {
+      streak = 0
+    }
+  }
+  return false
+}
+
 // ─── MAIN ANALYZER ────────────────────────────────────────────────────────────
 export function analyzeFeasibility(taskName, startTime, startMode, durationValue, hourlyData) {
   const profile = getActivityProfile(taskName)
@@ -379,6 +392,16 @@ export function analyzeFeasibility(taskName, startTime, startMode, durationValue
   // Weather verdict
   const weatherVerdict = determineWeatherVerdict(window, profile)
 
+  // Consecutive dry hours check for drying/harvesting tasks
+  let consecutiveVerdict = 'good'
+  if (profile.id === 'sun-drying' || profile.id === 'rice-harvesting') {
+    const required = parseDurationMax(durationValue)
+    const threshold = profile.rain.risky
+    if (!hasConsecutiveDryHours(window, threshold, required)) {
+      consecutiveVerdict = 'risky'
+    }
+  }
+
   // Heat index verdict
   const maxHI = Math.max(...window.map(h => h.heatIndex ?? calculateHeatIndex(h.temp, h.humidity)))
   const hiVerdict = getHIVerdict(maxHI)
@@ -388,18 +411,18 @@ export function analyzeFeasibility(taskName, startTime, startMode, durationValue
 
   // Combine all verdicts — worst wins
   const verdictOrder = ['good', 'caution', 'risky', 'bad']
-  const finalVerdict = [weatherVerdict, hiVerdict, cloudVerdict,
-    timeIsOptimal ? 'good' : 'caution']
-    .reduce((worst, v) => verdictOrder.indexOf(v) > verdictOrder.indexOf(worst) ? v : worst, 'good')
+  const finalVerdict = [weatherVerdict, hiVerdict, cloudVerdict, timeIsOptimal ? 'good' : 'caution', 
+    consecutiveVerdict]
+  .reduce((worst, v) => verdictOrder.indexOf(v) > verdictOrder.indexOf(worst) ? v : worst, 'good')
 
   const bestWindow = findBestWindow(hourlyData, durationValue, profile, startTime, startMode)
   const showBestWindow = finalVerdict !== 'good' ? bestWindow : null
-  const tips = buildTips(profile, window, maxHI, timeIsOptimal, cloudVerdict)
+  const tips = buildTips(profile, window, maxHI, timeIsOptimal, cloudVerdict,consecutiveVerdict)
 
   return {
     verdict: finalVerdict,
     verdictLabel: getVerdictLabel(finalVerdict, timeIsOptimal, maxHI, cloudVerdict),
-    verdictSub: getVerdictSub(finalVerdict, profile, window, maxHI, timeIsOptimal, cloudVerdict),
+    verdictSub: getVerdictSub(finalVerdict, profile, window, maxHI, timeIsOptimal, cloudVerdict,consecutiveVerdict),
     hourly: window,
     factors: buildFactors(window, profile),
     bestTime: showBestWindow,
@@ -446,7 +469,7 @@ function getVerdictLabel(verdict, timeIsOptimal, maxHI, cloudVerdict) {
   return 'Good to Go!'
 }
 
-function getVerdictSub(verdict, profile, window, maxHI, timeIsOptimal, cloudVerdict) {
+function getVerdictSub(verdict, profile, window, maxHI, timeIsOptimal, cloudVerdict,consecutiveVerdict) {
   if (verdict === 'good') return `Conditions look favorable for ${profile.name}.`
 
   const issues = []
@@ -468,6 +491,7 @@ function getVerdictSub(verdict, profile, window, maxHI, timeIsOptimal, cloudVerd
 
   if (!timeIsOptimal && profile.tips.time) issues.push('non-optimal time of day')
   if (cloudVerdict !== 'good')             issues.push('insufficient sunlight for drying')
+  if (consecutiveVerdict !== 'good') issues.push('no consecutive dry hours in window')
 
   return issues.length > 0 ? `Due to ${formatIssues(issues)} in your window.` : `Conditions are borderline for ${profile.name}.`
 }
@@ -503,7 +527,7 @@ export function buildFactors(window, profile) {
 function getHILevel(v)       { return v > 41  ? 'bad' : v > 32  ? 'warn' : 'ok' }
 
 // ─── TIPS ─────────────────────────────────────────────────────────────────────
-function buildTips(profile, window, maxHI, timeIsOptimal, cloudVerdict) {
+function buildTips(profile, window, maxHI, timeIsOptimal, cloudVerdict, consecutiveVerdict) {
   const tips = [...profile.tips.base]
   const maxRain     = Math.max(...window.map(h => h.rain))
   const maxWind     = Math.max(...window.map(h => h.wind))
@@ -515,7 +539,10 @@ function buildTips(profile, window, maxHI, timeIsOptimal, cloudVerdict) {
   if (maxHI > 32)                            tips.push({ icon: '🌡', text: `${profile.tips.heat} (Heat index: ${maxHI}°C)` })
   if (!timeIsOptimal && profile.tips.time)   tips.push({ icon: '🕐', text: profile.tips.time })
   if (cloudVerdict !== 'good' && profile.tips.cloud) tips.push({ icon: '☁️', text: profile.tips.cloud })
-
+  if (consecutiveVerdict !== 'good') {
+    const taskLabel = profile.id === 'sun-drying' ? 'drying' : 'harvesting'
+    tips.push({ icon: '⏱', text: `Interrupted dry periods reduce ${taskLabel} efficiency — look for a window with consistently dry hours throughout.` })
+  }  
   return tips
 }
 

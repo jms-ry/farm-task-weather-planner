@@ -504,9 +504,10 @@ function getVerdictLabel(verdict, timeIsOptimal, maxHI, cloudVerdict) {
   if (verdict === 'bad')     return 'Not Recommended — Consider Rescheduling'
   if (verdict === 'risky')   return 'Risky — Proceed with Caution'
   if (verdict === 'caution') {
-    if (maxHI > 32 && maxHI <= 41) return 'Proceed with Caution — High Heat Index'
-    if (!timeIsOptimal)             return 'Proceed with Caution — Not Optimal Time'
-    if (cloudVerdict === 'risky')   return 'Proceed with Caution — Limited Sunlight'
+    if (maxHI > 41)                         return 'Proceed with Caution — Dangerous Heat Index'
+    if (maxHI > 32)                         return 'Proceed with Caution — Elevated Heat Index'
+    if (!timeIsOptimal)                     return 'Proceed with Caution — Not Optimal Time'
+    if (cloudVerdict === 'risky')           return 'Proceed with Caution — Limited Sunlight'
     return 'Proceed with Caution'
   }
   return 'Good to Go!'

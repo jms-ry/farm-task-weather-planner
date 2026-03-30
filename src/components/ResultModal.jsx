@@ -162,7 +162,7 @@ export default function ResultModal({ task, duration, startTime, startMode, weat
               </div>
             )}
 
-            <div className={`modal__factors ${result.factors.length === 5 ? 'modal__factors--five' : ''}`}>
+            <div className="modal__factors">
               {result.factors.map((f, i) => (
                 <div key={i} className="modal__factor">
                   <div className="modal__factor-icon">{f.icon}</div>
